@@ -1,6 +1,6 @@
 # PHP-MIGRATOR ★
 
-Herramienta automática para migrar configuraciones y extensiones de un php.ini antiguo a una versión nueva de PHP descargada desde el sitio oficial de Windows.
+Herramienta automática para migrar php.ini a otra version de php, incluyendo las extensiones y modulos a una versión nueva de PHP descargada desde el sitio oficial de Windows.
 
 
 
