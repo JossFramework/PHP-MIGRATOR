@@ -21,6 +21,9 @@ CONFIG_KEYS = [
     "max_input_vars",
 ]
 
+
+
+
 # 🔍 Extrae las extensiones activas del archivo php.ini original
 def parse_ini_extensions(filepath):
     exts = set()
@@ -36,6 +39,10 @@ def parse_ini_extensions(filepath):
                 exts.add(ext)
     return list(exts)
 
+
+
+
+
 # 🛠️ Extrae configuraciones clave del archivo php.ini original
 def parse_ini_configs(filepath):
     configs = {}
@@ -48,6 +55,9 @@ def parse_ini_configs(filepath):
             if key in CONFIG_KEYS:
                 configs[key] = val
     return configs
+
+
+
 
 # 🌐 Descarga el ZIP oficial de PHP desde windows.php.net
 def download_php_zip(version, platform, dest):
@@ -66,6 +76,9 @@ def download_php_zip(version, platform, dest):
         print(f"{Fore.RED}❌ Error al descargar PHP: {e}")
         sys.exit(1)
 
+
+
+
 # 📦 Extrae el archivo ZIP descargado
 def extract_zip(zip_path, extract_to):
     print(f"{Fore.LIGHTBLACK_EX}📦 Extrayendo {zip_path} ...")
@@ -73,12 +86,17 @@ def extract_zip(zip_path, extract_to):
         zip_ref.extractall(extract_to)
     print(f"{Fore.GREEN}✅ Extracción completa.")
 
+
+
 # 📁 Encuentra el root del ZIP extraído que contiene php.ini y carpeta ext
 def find_php_root_dir(base_path):
     for root, dirs, files in os.walk(base_path):
         if 'php.ini-production' in files and 'ext' in dirs:
             return root
     return None
+
+
+
 
 # 🧩 Extrae el bloque completo "Module Settings" (comentarios + config) del php.ini viejo
 def extract_module_settings_block(filepath):
@@ -109,6 +127,10 @@ def extract_module_settings_block(filepath):
         end_idx = len(lines)
 
     return lines[start_idx:end_idx+1]
+
+
+
+
 
 # 📝 Genera un nuevo php.ini basado en el template y migrando extensiones + configs + bloque Module Settings
 def generate_new_ini(template_ini_path, extensions, configs, output_path, module_settings_block=None):
@@ -153,6 +175,9 @@ def generate_new_ini(template_ini_path, extensions, configs, output_path, module
 
     print(f"{Fore.GREEN}✅ Nuevo php.ini guardado.")
 
+
+
+
 # 📁 Copia las DLLs de las extensiones activas a la nueva carpeta /ext
 def copy_extensions(ext_dir_src, ext_dir_dst, extensions):
     os.makedirs(ext_dir_dst, exist_ok=True)
@@ -166,6 +191,27 @@ def copy_extensions(ext_dir_src, ext_dir_dst, extensions):
             missing.append(ext)
     if missing:
         print(f"{Fore.YELLOW}⚠️ No se encontraron DLLs para: {', '.join(missing)}")
+
+
+
+
+# 📁 Copia todos los archivos del PHP extraído, excepto 'ext' (que ya se copia aparte) y 'php.ini*'
+def copy_php_base_files(src, dst, exclude_dirs=('ext',), exclude_files=('php.ini-development', 'php.ini-production')):
+    for root, dirs, files in os.walk(src):
+        # Calcular ruta relativa para mantener estructura
+        rel_path = os.path.relpath(root, src)
+        dst_path = os.path.join(dst, rel_path)
+        os.makedirs(dst_path, exist_ok=True)
+
+        # Copiar archivos, excepto los excluidos
+        for file in files:
+            if file in exclude_files:
+                continue
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(dst_path, file)
+            shutil.copy2(src_file, dst_file)
+
+
 
 # 🚀 Función principal que realiza la migración
 def main():
@@ -207,6 +253,8 @@ def main():
 
         output_dir = os.path.abspath(f'php_v{args.new_version}' + ('_safe' if args.safe else ''))
         os.makedirs(output_dir, exist_ok=True)
+
+        copy_php_base_files(extracted_root, output_dir)
 
         new_ini_path = os.path.join(output_dir, 'php.ini')
         generate_new_ini(ini_template, extensions, configs, new_ini_path, module_settings_block=module_settings_block)
